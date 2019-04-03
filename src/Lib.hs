@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Lib where
-import Control.Applicative
+import           Data.Bifunctor
+import           Control.Applicative
 import qualified Data.ByteString.Lazy as BL
-import Data.Csv
+import           Data.Csv
 import qualified Data.Vector as V
 import qualified Data.List as L
 import           Data.Text (Text)
@@ -31,56 +32,43 @@ levelUp heroe = heroe { points = (+1) $ points heroe  }
 toLowerName :: Heroe -> Heroe
 toLowerName heroe = heroe { name = T.toLower $ name heroe }
 
+type HeroesVector = (V.Vector Name, V.Vector Heroe)
 
-type MaybeHeroesVector = Maybe (V.Vector Name, V.Vector Heroe)
-
-byteStringToHeroesVector :: BL.ByteString -> IO MaybeHeroesVector
+byteStringToHeroesVector :: BL.ByteString -> IO (Maybe HeroesVector)
 byteStringToHeroesVector csvData = case decodeByName csvData of
   Left err -> pure Nothing
   Right (h, v) -> pure $ Just (h, v)
 
-heroesVectorToByteString :: MaybeHeroesVector -> Maybe BL.ByteString
-heroesVectorToByteString heroes = do
-  h <- heroes
-  pure $ encodeByName (fst h) $ V.toList $ snd h
+heroesVectorToByteString :: HeroesVector -> BL.ByteString
+heroesVectorToByteString (header, rows) = encodeByName header (V.toList rows)
 
+sortHeroesById :: V.Vector Heroe -> V.Vector Heroe
+sortHeroesById = V.fromList . L.sortOn _id . V.toList
 
-sortHeroesById :: MaybeHeroesVector -> MaybeHeroesVector
-sortHeroesById heroes = do
-  h <- heroes
-  pure $ (,) (fst h) $ V.fromList $ L.sortOn (_id) $ V.toList $ snd h
+levelUpHeroes :: V.Vector Heroe -> V.Vector Heroe
+levelUpHeroes = V.map levelUp
 
-levelUpHeroes :: MaybeHeroesVector -> MaybeHeroesVector
-levelUpHeroes heroes = do
-    h <- heroes
-    pure $ (,) (fst h) $ V.map levelUp $ snd h
+allNamesInLowerCase :: V.Vector Heroe -> V.Vector Heroe
+allNamesInLowerCase = V.map toLowerName
 
-allNamesInLowerCase :: MaybeHeroesVector -> MaybeHeroesVector
-allNamesInLowerCase heroes = do
-    h <- heroes
-    pure $ (,) (fst h) $ V.map toLowerName $ snd h
-
-printHeroesVector :: MaybeHeroesVector -> IO ()
-printHeroesVector heroesDataVector = do
-  let Just(_, heroes) = heroesDataVector
+printHeroesVector :: HeroesVector -> IO ()
+printHeroesVector (_, heroes) = do
   V.forM_ heroes $ \heroe -> putStrLn $ (show $ name heroe) ++ " has " ++ (show $ points heroe) ++ " points!"
 
-writeHeroesVector :: String -> MaybeHeroesVector -> IO ()
+writeHeroesVector :: String -> HeroesVector -> IO ()
 writeHeroesVector csvFilePath heroesDataVector = do
-  let Just(heroesByteString) = heroesVectorToByteString heroesDataVector
+  let heroesByteString = heroesVectorToByteString heroesDataVector
   BL.writeFile csvFilePath heroesByteString
 
 readCSVFile :: String -> Bool -> IO ()
 readCSVFile csvFilePath dryRun = do
   csvData <- BL.readFile csvFilePath
-  heroesVector <-  byteStringToHeroesVector csvData
-
-  let transformedHeroesVector = sortHeroesById
-        $ levelUpHeroes
-        $ allNamesInLowerCase heroesVector
-
-  if dryRun then
-    printHeroesVector transformedHeroesVector
-  else
-    writeHeroesVector csvFilePath transformedHeroesVector
-
+  maybeHeroesVector <- byteStringToHeroesVector csvData
+  case maybeHeroesVector of
+    Nothing -> putStrLn "Failed to parse CSV."
+    Just file -> do
+      let transformedHeroesVector (header, rows) =
+            (header, (sortHeroesById . levelUpHeroes . allNamesInLowerCase) rows)
+      if dryRun
+        then printHeroesVector (transformedHeroesVector file)
+        else writeHeroesVector csvFilePath (transformedHeroesVector file)
