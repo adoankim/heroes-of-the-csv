@@ -9,16 +9,7 @@ import qualified Data.Vector as V
 import qualified Data.List as L
 import           Data.Text (Text)
 import qualified Data.Text as T
-
-data Heroe = Heroe
-  {
-      _id     :: !Int
-    , name   :: !Text
-    , points :: !Int
-  } deriving(Show)
-
-instance Eq Heroe where
-  (==) (Heroe _id1 name1 points1) (Heroe _id2 name2 points2) = _id1 == _id2 && name1 == name2 && points1 == points2
+import Heroe.Types
 
 instance FromNamedRecord Heroe where
     parseNamedRecord r = Heroe <$> r .: "id" <*> r .: "name" <*> r .: "points"

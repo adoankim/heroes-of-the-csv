@@ -27,6 +27,15 @@ source-repository head
 
 library
   exposed-modules:
+      Heroe.Types
+  other-modules:
+      Paths_heroes_of_the_csv
+  hs-source-dirs:
+      src/Heroe
+  build-depends:
+      base >=4.7 && <5
+     , text
+  exposed-modules:
       Lib
   other-modules:
       Paths_heroes_of_the_csv
