@@ -51,15 +51,19 @@ writeHeroesVector csvFilePath heroesDataVector = do
   let heroesByteString = heroesVectorToByteString heroesDataVector
   BL.writeFile csvFilePath heroesByteString
 
-readCSVFile :: String -> Bool -> IO ()
+readCSVFile :: String -> Bool -> IO (Maybe (V.Vector Heroe))
 readCSVFile csvFilePath dryRun = do
   csvData <- BL.readFile csvFilePath
   maybeHeroesVector <- byteStringToHeroesVector csvData
   case maybeHeroesVector of
-    Nothing -> putStrLn "Failed to parse CSV."
+    Nothing -> do
+      putStrLn "Failed to parse CSV."
+      pure $ Nothing
     Just file -> do
       let transformedHeroesVector (header, rows) =
             (header, (sortHeroesById . levelUpHeroes . allNamesInLowerCase) rows)
+      let heroes = transformedHeroesVector file
       if dryRun
-        then printHeroesVector (transformedHeroesVector file)
-        else writeHeroesVector csvFilePath (transformedHeroesVector file)
+        then printHeroesVector heroes
+        else writeHeroesVector csvFilePath heroes
+      pure $ Just $ snd heroes
