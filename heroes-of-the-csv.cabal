@@ -36,6 +36,19 @@ library
       base >=4.7 && <5
      , text
   exposed-modules:
+      CSVHeroe
+    , CSVHeroe.Types
+  other-modules:
+      Paths_heroes_of_the_csv
+  hs-source-dirs:
+      src/Heroe
+  build-depends:
+      base >=4.7 && <5
+     , text
+     , cassava
+     , bytestring
+     , vector
+  exposed-modules:
       Lib
   other-modules:
       Paths_heroes_of_the_csv

@@ -10,25 +10,14 @@ import qualified Data.List as L
 import           Data.Text (Text)
 import qualified Data.Text as T
 import Heroe.Types
-
-instance FromNamedRecord Heroe where
-    parseNamedRecord r = Heroe <$> r .: "id" <*> r .: "name" <*> r .: "points"
-
-instance ToNamedRecord Heroe where
-    toNamedRecord (Heroe _id name points) = namedRecord [ "id" .= _id, "name" .= name, "points" .= points ]
+import CSVHeroe
+import CSVHeroe.Types
 
 levelUp :: Heroe -> Heroe
 levelUp heroe = heroe { points = (+1) $ points heroe  }
 
 toLowerName :: Heroe -> Heroe
 toLowerName heroe = heroe { name = T.toLower $ name heroe }
-
-type HeroesVector = (V.Vector Name, V.Vector Heroe)
-
-byteStringToHeroesVector :: BL.ByteString -> IO (Maybe HeroesVector)
-byteStringToHeroesVector csvData = case decodeByName csvData of
-  Left err -> pure Nothing
-  Right (h, v) -> pure $ Just (h, v)
 
 heroesVectorToByteString :: HeroesVector -> BL.ByteString
 heroesVectorToByteString (header, rows) = encodeByName header (V.toList rows)

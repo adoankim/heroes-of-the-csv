@@ -8,5 +8,5 @@ import Servant
 import Server.Types
 import Server.Handlers
 
-app :: Application
-app = serve (Proxy :: Proxy HeroeAPI) heroeHandlers
+app :: String -> Application
+app heroesFilePath = serve (Proxy :: Proxy HeroeAPI) (heroeHandlers heroesFilePath)

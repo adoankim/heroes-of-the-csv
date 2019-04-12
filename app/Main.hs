@@ -8,4 +8,4 @@ main :: IO ()
 main = do
   readCSVFile "heroes.csv" False
   putStrLn "Serving scores on port 3001"
-  run 3001 app
+  run 3001 $ app "heroes.csv"
