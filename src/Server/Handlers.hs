@@ -21,8 +21,7 @@ import CSVHeroe
 heroesScore :: MonadIO m => ReaderT String m (Handler [Heroe])
 heroesScore = do
   filePath <- ask
-  heroes <- liftIO $ getHeroesFromFile filePath
-  pure . pure $  V.toList heroes
+  pure $ liftIO $ V.toList <$> getHeroesFromFile filePath
 
 heroeHandlers :: MonadIO m => ReaderT String m (Server HeroeAPI)
 heroeHandlers = heroesScore
